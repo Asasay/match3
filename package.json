@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@pixi/filter-outline": "^5.2.0",
+    "@pixi/math-extras": "^7.3.2",
     "pixi.js": "^7"
   }
 }

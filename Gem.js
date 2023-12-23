@@ -14,8 +14,7 @@ export class Gem extends PIXI.Sprite {
       0,
       texture.textureCacheIds[0].indexOf("Gem.")
     );
-    this.vx = 0;
-    this.vy = 0;
+    this.v = new PIXI.Point(0, 0);
     this.selected = false;
 
     this.outlineFilter = new OutlineFilter(6, "#DE6F3E", 1, 0.8);

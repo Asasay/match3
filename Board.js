@@ -1,5 +1,5 @@
 import { Gem } from "./Gem";
-import { Container } from "pixi.js";
+import { Container, Point } from "pixi.js";
 import { swapElements2D } from "./helpers";
 import { Text } from "pixi.js";
 
@@ -12,13 +12,7 @@ export default class Board {
       this.gems.push([]);
       this.gems[i].push(new Array(cols));
       for (var j = 0; j < cols; j++) {
-        const gem = new Gem(
-          {
-            x: i,
-            y: j,
-          },
-          this
-        );
+        const gem = new Gem(new Point(i, j), this);
         this.gems[i][j] = gem;
         gem.scale.set(0.5, 0.5);
         gem.position.set(i * 128, j * 128);
@@ -26,8 +20,7 @@ export default class Board {
 
         gem.text = new Text(i + ", " + j);
         gem.text.zIndex = 999;
-        gem.text.x = gem.x;
-        gem.text.y = gem.y;
+        gem.text.position = gem.position;
         this.container.sortableChildren = true;
         this.container.addChild(gem.text);
 
@@ -59,31 +52,18 @@ export default class Board {
     return false;
   }
   adjacent(gem1, gem2) {
-    return (
-      Math.abs(
-        gem1.boardCoords.x +
-          gem1.boardCoords.y -
-          (gem2.boardCoords.x + gem2.boardCoords.y)
-      ) == 1
-    );
+    return gem1.boardCoords.subtract(gem2.boardCoords).magnitude() == 1;
   }
 
   swap(targetGem) {
-    swapElements2D(
-      this.gems,
-      this.selectedGem.boardCoords.x,
-      this.selectedGem.boardCoords.y,
-      targetGem.boardCoords.x,
-      targetGem.boardCoords.y
-    );
+    const i1 = this.selectedGem.boardCoords.x;
+    const j1 = this.selectedGem.boardCoords.y;
+    const i2 = targetGem.boardCoords.x;
+    const j2 = targetGem.boardCoords.y;
+    swapElements2D(this.gems, i1, j1, i2, j2);
 
-    const selectedX = this.selectedGem.boardCoords.x;
-    const selectedY = this.selectedGem.boardCoords.y;
-
-    this.selectedGem.boardCoords.x = targetGem.boardCoords.x;
-    this.selectedGem.boardCoords.y = targetGem.boardCoords.y;
-
-    targetGem.boardCoords.x = selectedX;
-    targetGem.boardCoords.y = selectedY;
+    const selectedCoords = this.selectedGem.boardCoords;
+    this.selectedGem.boardCoords = targetGem.boardCoords;
+    targetGem.boardCoords = selectedCoords;
   }
 }

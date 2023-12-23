@@ -1,4 +1,5 @@
 import * as PIXI from "pixi.js";
+import "@pixi/math-extras";
 import Board from "./board";
 
 //Create a Pixi Application
@@ -29,24 +30,18 @@ function play(delta) {
   count += 0.03;
   board.gems.forEach((column, i) => {
     column.forEach((gem, j) => {
-      const newX = i * 128;
-      const newY = j * 128;
-      if (gem.x != newX || gem.y != newY) {
-        const deltaX = gem.x - newX;
-        const deltaY = gem.y - newY;
-        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      const newPos = new PIXI.Point(i * 128, j * 128);
+      if (!newPos.equals(gem.position)) {
+        const delta = newPos.subtract(gem.position);
+        const distance = delta.magnitude();
         if (distance < 6) {
-          gem.x = newX;
-          gem.vx = 0;
-          gem.y = newY;
-          gem.vy = 0;
+          gem.position = newPos;
+          gem.v.set(0, 0);
         } else {
-          gem.vx = -deltaX / distance;
-          gem.vy = -deltaY / distance;
+          gem.v = delta.normalize();
         }
       }
-      gem.x += gem.vx * 5;
-      gem.y += gem.vy * 5;
+      gem.position = gem.position.add(gem.v.multiplyScalar(5));
       gem.outlineFilter.thickness = Math.sin(count) * 5;
     });
   });
