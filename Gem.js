@@ -1,6 +1,7 @@
 import * as PIXI from "pixi.js";
 import { getRandomProp } from "./helpers";
 import { OutlineFilter } from "@pixi/filter-outline";
+import { cellSize } from "./main";
 
 export class Gem extends PIXI.Sprite {
   constructor(boardCoords, board) {
@@ -10,10 +11,7 @@ export class Gem extends PIXI.Sprite {
 
     this.boardCoords = boardCoords;
     this.board = board;
-    this.color = texture.textureCacheIds[0].substring(
-      0,
-      texture.textureCacheIds[0].indexOf("Gem.")
-    );
+    this.color = texture.textureCacheIds[0].substring(0, texture.textureCacheIds[0].indexOf("Gem."));
     this.v = new PIXI.Point(0, 0);
     this.selected = false;
 
@@ -29,5 +27,18 @@ export class Gem extends PIXI.Sprite {
   deselect() {
     this.selected = false;
     this.outlineFilter.enabled = false;
+  }
+  moveToNewPos(speed) {
+    const newPos = this.boardCoords.multiplyScalar(cellSize);
+    const delta = newPos.subtract(this.position);
+    const distance = delta.magnitude();
+    if (distance <= speed) {
+      this.position = newPos;
+      this.v.set(0, 0);
+    } else {
+      this.v = delta.normalize();
+    }
+
+    this.position = this.position.add(this.v.multiplyScalar(speed));
   }
 }

@@ -2,20 +2,22 @@ import { Gem } from "./Gem";
 import { Container, Point } from "pixi.js";
 import { swapElements2D } from "./helpers";
 import { Text } from "pixi.js";
+import { cellSize } from "./main";
 
 export default class Board {
   constructor(rows, cols) {
     this.gems = [];
     this.container = new Container();
     this.selectedGem = null;
-    for (var i = 0; i < rows; i++) {
+    this.targetGem = null;
+    for (var i = 0; i < cols; i++) {
       this.gems.push([]);
-      this.gems[i].push(new Array(cols));
-      for (var j = 0; j < cols; j++) {
+      this.gems[i].push(new Array(rows));
+      for (var j = 0; j < rows; j++) {
         const gem = new Gem(new Point(i, j), this);
         this.gems[i][j] = gem;
-        gem.scale.set(0.5, 0.5);
-        gem.position.set(i * 128, j * 128);
+        gem.scale.set(cellSize / gem.width, cellSize / gem.height);
+        gem.position.set(i * cellSize, j * cellSize);
         this.container.addChild(gem);
 
         gem.text = new Text(i + ", " + j);
@@ -35,12 +37,13 @@ export default class Board {
     return function () {
       const targetGem = this;
       if (board.selectedGem) {
-        if (board.adjacent(board.selectedGem, targetGem)) {
-          board.swap(targetGem);
-          if (!board.combo) board.swap(targetGem);
-        }
         board.selectedGem.deselect();
-        board.selectedGem = null;
+        if (board.adjacent(board.selectedGem, targetGem)) {
+          board.targetGem = targetGem;
+          board.swap(board.selectedGem, board.targetGem);
+        } else {
+          board.selectedGem = null;
+        }
       } else {
         targetGem.select();
         board.selectedGem = targetGem;
@@ -55,15 +58,15 @@ export default class Board {
     return gem1.boardCoords.subtract(gem2.boardCoords).magnitude() == 1;
   }
 
-  swap(targetGem) {
-    const i1 = this.selectedGem.boardCoords.x;
-    const j1 = this.selectedGem.boardCoords.y;
-    const i2 = targetGem.boardCoords.x;
-    const j2 = targetGem.boardCoords.y;
+  swap(gem1, gem2) {
+    const i1 = gem1.boardCoords.x;
+    const j1 = gem1.boardCoords.y;
+    const i2 = gem2.boardCoords.x;
+    const j2 = gem2.boardCoords.y;
     swapElements2D(this.gems, i1, j1, i2, j2);
 
-    const selectedCoords = this.selectedGem.boardCoords;
-    this.selectedGem.boardCoords = targetGem.boardCoords;
-    targetGem.boardCoords = selectedCoords;
+    const gem1Coords = gem1.boardCoords;
+    gem1.boardCoords = gem2.boardCoords;
+    gem2.boardCoords = gem1Coords;
   }
 }
