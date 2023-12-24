@@ -1,6 +1,12 @@
 import { Gem } from "./Gem";
 import { Container, Point } from "pixi.js";
-import { swapElements2D } from "./helpers";
+import {
+  findIndex2D,
+  principalDiagonal,
+  secondaryDiagonal,
+  swapElements2D,
+  transpose,
+} from "./helpers";
 import { Text } from "pixi.js";
 import { cellSize } from "./main";
 
@@ -10,6 +16,7 @@ export default class Board {
     this.container = new Container();
     this.selectedGem = null;
     this.targetGem = null;
+    this.swapped = false;
     for (var i = 0; i < cols; i++) {
       this.gems.push([]);
       this.gems[i].push(new Array(rows));
@@ -32,7 +39,32 @@ export default class Board {
       }
     }
   }
-
+  checkCombo() {
+    const transposed = transpose(this.gems);
+    const pDiagonal = principalDiagonal(this.gems);
+    const sDiagonal = secondaryDiagonal(this.gems);
+    const combined = this.gems.concat(transposed).concat(pDiagonal).concat(sDiagonal);
+    const duplicating = combined
+      .map((row) =>
+        this.toWindows(row, 3).filter((window) => new Set(window.map((gem) => gem.color)).size == 1)
+      )
+      .flat(Infinity);
+    return [...new Set(duplicating)];
+  }
+  toWindows(inputArray, size) {
+    return inputArray.reduce(
+      (acc, _, index, arr) =>
+        index + size > arr.length ? acc : acc.concat([arr.slice(index, index + size)]),
+      []
+    );
+  }
+  removeGem(gem) {
+    console.log(findIndex2D(this.gems, gem));
+    console.log(gem.boardIndexes);
+    gem.text.text = "X";
+    this.gems[gem.boardIndexes.x][gem.boardIndexes.y] = null;
+    this.container.removeChild(gem);
+  }
   handleSelect(board) {
     return function () {
       const targetGem = this;
@@ -51,22 +83,20 @@ export default class Board {
     };
   }
 
-  combo() {
-    return false;
-  }
   adjacent(gem1, gem2) {
-    return gem1.boardCoords.subtract(gem2.boardCoords).magnitude() == 1;
+    return gem1.boardIndexes.subtract(gem2.boardIndexes).magnitude() == 1;
   }
 
   swap(gem1, gem2) {
-    const i1 = gem1.boardCoords.x;
-    const j1 = gem1.boardCoords.y;
-    const i2 = gem2.boardCoords.x;
-    const j2 = gem2.boardCoords.y;
+    this.swapped = !this.swapped;
+    const i1 = gem1.boardIndexes.x;
+    const j1 = gem1.boardIndexes.y;
+    const i2 = gem2.boardIndexes.x;
+    const j2 = gem2.boardIndexes.y;
     swapElements2D(this.gems, i1, j1, i2, j2);
 
-    const gem1Coords = gem1.boardCoords;
-    gem1.boardCoords = gem2.boardCoords;
-    gem2.boardCoords = gem1Coords;
+    const gem1Coords = gem1.boardIndexes;
+    gem1.boardIndexes = gem2.boardIndexes;
+    gem2.boardIndexes = gem1Coords;
   }
 }

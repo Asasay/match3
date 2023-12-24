@@ -26,23 +26,41 @@ function gameLoop(delta) {
   state(delta);
 }
 
+let speed = 5;
 let count = 0;
 function idleState(delta) {
   count += 0.03;
-  if (board.selectedGem) board.selectedGem.outlineFilter.thickness = Math.sin(count) * 5;
+  if (board.selectedGem) board.selectedGem.outlineFilter.thickness = Math.sin(count) * speed;
   if (board.selectedGem && board.targetGem) state = moveState;
 }
 
 function moveState(delta) {
+  const selectedGem = board.selectedGem;
+  const targetGem = board.targetGem;
   if (
-    !board.selectedGem.position.equals(board.selectedGem.boardCoords.multiplyScalar(cellSize)) ||
-    !board.targetGem.position.equals(board.targetGem.boardCoords.multiplyScalar(cellSize))
+    !selectedGem.position.equals(selectedGem.boardIndexesToCanvas) ||
+    !targetGem.position.equals(targetGem.boardIndexesToCanvas)
   ) {
-    board.selectedGem.moveToNewPos(5);
-    board.targetGem.moveToNewPos(5);
-  } else {
+    selectedGem.moveToNewPos(speed);
+    targetGem.moveToNewPos(speed);
+    return;
+  } else if (board.swapped) state = comboState;
+  else {
+    state = idleState;
     board.selectedGem = null;
     board.targetGem = null;
-    state = idleState;
   }
+}
+
+function comboState(delta) {
+  const gemsForDeletion = board.checkCombo();
+  if (gemsForDeletion.length > 0) gemsForDeletion.forEach((gem) => board.removeGem(gem));
+  else {
+    board.swap(board.selectedGem, board.targetGem);
+    state = moveState;
+    return;
+  }
+  state = idleState;
+  board.selectedGem = null;
+  board.targetGem = null;
 }
