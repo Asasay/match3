@@ -7,19 +7,20 @@ export const randomIntfunction = function (min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-export const swapElements2D = (matrix, i1, j1, i2, j2) => {
-  const tempObject = matrix[i1][j1];
-  matrix[i1][j1] = matrix[i2][j2];
-  matrix[i2][j2] = tempObject;
+export const swapElements2D = (matrix, y1, x1, y2, x2) => {
+  const tempObject = matrix[y1][x1];
+  matrix[y1][x1] = matrix[y2][x2];
+  matrix[y2][x2] = tempObject;
+  return matrix;
 };
 
 export const transpose = (matrix) => {
   return matrix.reduce((prev, next) => next.map((item, i) => (prev[i] || []).concat(next[i])), []);
 };
 
-export const principalDiagonal = (matrix) => [matrix.map((a, i) => a[i])];
+export const principalDiagonal = (matrix) => [matrix.map((row, i) => row[i])];
 export const secondaryDiagonal = (matrix) => [
-  [...matrix].map((a, i) => a.reverse()).map((a, i) => a[i]),
+  matrix.map((row) => [...row].reverse()).map((row, i) => row[i]),
 ];
 
 export const findIndex2D = (array, value) => {
@@ -34,4 +35,16 @@ export const findIndex2D = (array, value) => {
     }
   }
   return result;
+};
+
+export const toWindows = (inputArray, size) => {
+  return inputArray.reduce(
+    (acc, _, index, arr) =>
+      index + size > arr.length ? acc : acc.concat([arr.slice(index, index + size)]),
+    []
+  );
+};
+
+export const moveNullsToLeft = (array) => {
+  return array.filter((x) => x === null).concat(array.filter((x) => x !== null));
 };

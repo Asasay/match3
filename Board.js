@@ -1,10 +1,11 @@
 import { Gem } from "./Gem";
 import { Container, Point } from "pixi.js";
 import {
-  findIndex2D,
   principalDiagonal,
+  moveNullsToLeft,
   secondaryDiagonal,
   swapElements2D,
+  toWindows,
   transpose,
 } from "./helpers";
 import { Text } from "pixi.js";
@@ -17,17 +18,17 @@ export default class Board {
     this.selectedGem = null;
     this.targetGem = null;
     this.swapped = false;
-    for (var i = 0; i < cols; i++) {
+    for (var y = 0; y < rows; y++) {
       this.gems.push([]);
-      this.gems[i].push(new Array(rows));
-      for (var j = 0; j < rows; j++) {
-        const gem = new Gem(new Point(i, j), this);
-        this.gems[i][j] = gem;
+      this.gems[y].push(new Array(rows));
+      for (var x = 0; x < cols; x++) {
+        const gem = new Gem(new Point(x, y), this);
+        this.gems[y][x] = gem;
         gem.scale.set(cellSize / gem.width, cellSize / gem.height);
-        gem.position.set(i * cellSize, j * cellSize);
+        gem.position.set(x * cellSize, y * cellSize);
         this.container.addChild(gem);
 
-        gem.text = new Text(i + ", " + j);
+        gem.text = new Text(y + ", " + x);
         gem.text.zIndex = 999;
         gem.text.position = gem.position;
         this.container.sortableChildren = true;
@@ -38,32 +39,6 @@ export default class Board {
         gem.on("pointerdown", this.handleSelect(this));
       }
     }
-  }
-  checkCombo() {
-    const transposed = transpose(this.gems);
-    const pDiagonal = principalDiagonal(this.gems);
-    const sDiagonal = secondaryDiagonal(this.gems);
-    const combined = this.gems.concat(transposed).concat(pDiagonal).concat(sDiagonal);
-    const duplicating = combined
-      .map((row) =>
-        this.toWindows(row, 3).filter((window) => new Set(window.map((gem) => gem.color)).size == 1)
-      )
-      .flat(Infinity);
-    return [...new Set(duplicating)];
-  }
-  toWindows(inputArray, size) {
-    return inputArray.reduce(
-      (acc, _, index, arr) =>
-        index + size > arr.length ? acc : acc.concat([arr.slice(index, index + size)]),
-      []
-    );
-  }
-  removeGem(gem) {
-    console.log(findIndex2D(this.gems, gem));
-    console.log(gem.boardIndexes);
-    gem.text.text = "X";
-    this.gems[gem.boardIndexes.x][gem.boardIndexes.y] = null;
-    this.container.removeChild(gem);
   }
   handleSelect(board) {
     return function () {
@@ -83,17 +58,43 @@ export default class Board {
     };
   }
 
+  clear() {
+    const transposed = transpose(this.gems);
+    const pDiagonal = principalDiagonal(this.gems);
+    const sDiagonal = secondaryDiagonal(this.gems);
+    const combined = this.gems.concat(transposed).concat(pDiagonal).concat(sDiagonal);
+    const duplicating = combined
+      .map((row) =>
+        toWindows(row, 3).filter((window) => new Set(window.map((gem) => gem.color)).size == 1)
+      )
+      .flat(Infinity);
+    return [...new Set(duplicating)];
+  }
+  removeGem(gem) {
+    this.gems[gem.boardIndexes.y][gem.boardIndexes.x] = null;
+    this.container.removeChild(gem);
+  }
   adjacent(gem1, gem2) {
     return gem1.boardIndexes.subtract(gem2.boardIndexes).magnitude() == 1;
   }
 
+  rearrange() {
+    this.gems = transpose(transpose(this.gems).map((row) => moveNullsToLeft(row)));
+    this.gems.forEach((row, y) =>
+      row.forEach((gem, x) => {
+        if (gem === null) return;
+        else gem.boardIndexes.set(x, y);
+      })
+    );
+  }
+
   swap(gem1, gem2) {
     this.swapped = !this.swapped;
-    const i1 = gem1.boardIndexes.x;
-    const j1 = gem1.boardIndexes.y;
-    const i2 = gem2.boardIndexes.x;
-    const j2 = gem2.boardIndexes.y;
-    swapElements2D(this.gems, i1, j1, i2, j2);
+    const y1 = gem1.boardIndexes.y;
+    const x1 = gem1.boardIndexes.x;
+    const y2 = gem2.boardIndexes.y;
+    const x2 = gem2.boardIndexes.x;
+    swapElements2D(this.gems, y1, x1, y2, x2);
 
     const gem1Coords = gem1.boardIndexes;
     gem1.boardIndexes = gem2.boardIndexes;

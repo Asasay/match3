@@ -11,7 +11,10 @@ export class Gem extends PIXI.Sprite {
 
     this.boardIndexes = boardIndexes;
     this.board = board;
-    this.color = texture.textureCacheIds[0].substring(0, texture.textureCacheIds[0].indexOf("Gem."));
+    this.color = texture.textureCacheIds[0].substring(
+      0,
+      texture.textureCacheIds[0].indexOf("Gem.")
+    );
     this.v = new PIXI.Point(0, 0);
     this.selected = false;
 
@@ -20,7 +23,7 @@ export class Gem extends PIXI.Sprite {
     this.filters = [this.outlineFilter];
   }
 
-  get boardIndexesToCanvas() {
+  get boardIndexesToCoords() {
     return this.boardIndexes.multiplyScalar(cellSize);
   }
   select() {
@@ -32,7 +35,7 @@ export class Gem extends PIXI.Sprite {
     this.outlineFilter.enabled = false;
   }
   moveToNewPos(speed) {
-    const newPos = this.boardIndexesToCanvas;
+    const newPos = this.boardIndexesToCoords;
     const delta = newPos.subtract(this.position);
     const distance = delta.magnitude();
     if (distance <= speed) {

@@ -29,17 +29,19 @@ function gameLoop(delta) {
 let speed = 5;
 let count = 0;
 function idleState(delta) {
+  console.log("idleState");
   count += 0.03;
   if (board.selectedGem) board.selectedGem.outlineFilter.thickness = Math.sin(count) * speed;
   if (board.selectedGem && board.targetGem) state = moveState;
 }
 
 function moveState(delta) {
+  console.log("moveState");
   const selectedGem = board.selectedGem;
   const targetGem = board.targetGem;
   if (
-    !selectedGem.position.equals(selectedGem.boardIndexesToCanvas) ||
-    !targetGem.position.equals(targetGem.boardIndexesToCanvas)
+    !selectedGem.position.equals(selectedGem.boardIndexesToCoords) ||
+    !targetGem.position.equals(targetGem.boardIndexesToCoords)
   ) {
     selectedGem.moveToNewPos(speed);
     targetGem.moveToNewPos(speed);
@@ -53,14 +55,37 @@ function moveState(delta) {
 }
 
 function comboState(delta) {
-  const gemsForDeletion = board.checkCombo();
-  if (gemsForDeletion.length > 0) gemsForDeletion.forEach((gem) => board.removeGem(gem));
-  else {
+  console.log("comboState");
+  const gemsForDeletion = board.clear();
+  if (gemsForDeletion.length > 0) {
+    gemsForDeletion.forEach((gem) => board.removeGem(gem));
+    board.selectedGem = null;
+    board.targetGem = null;
+    board.rearrange();
+    state = rearrangeState;
+    return;
+  } else {
     board.swap(board.selectedGem, board.targetGem);
     state = moveState;
     return;
   }
-  state = idleState;
-  board.selectedGem = null;
-  board.targetGem = null;
+  // state = idleState;
+  // board.selectedGem = null;
+  // board.targetGem = null;
+}
+
+function rearrangeState(delta) {
+  console.log("rearrangeState");
+  let gemsInPlace = true;
+  board.gems.forEach((row) =>
+    row.forEach((gem) => {
+      if (gem === null) return null;
+      if (!gem.position.equals(gem.boardIndexesToCoords)) {
+        gemsInPlace = false;
+        gem.moveToNewPos(speed / 3);
+        return gem;
+      }
+    })
+  );
+  if (gemsInPlace) state = idleState;
 }
