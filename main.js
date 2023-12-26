@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import "@pixi/math-extras";
-import Board from "./board";
+import Board from "./Board";
 
 export const app = new PIXI.Application({
   background: "0xffffff",
