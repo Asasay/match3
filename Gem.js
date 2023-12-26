@@ -1,7 +1,6 @@
 import * as PIXI from "pixi.js";
 import { getRandomProp } from "./helpers";
 import { OutlineFilter } from "@pixi/filter-outline";
-import { cellSize } from "./main";
 
 export class Gem extends PIXI.Sprite {
   constructor(boardIndexes, board) {
@@ -18,13 +17,13 @@ export class Gem extends PIXI.Sprite {
     this.v = new PIXI.Point(0, 0);
     this.selected = false;
 
-    this.outlineFilter = new OutlineFilter(6, "#DE6F3E", 1, 0.8);
+    this.outlineFilter = new OutlineFilter(board.cellSize / 20, "#DE6F3E", 1, 0.8);
     this.outlineFilter.enabled = false;
     this.filters = [this.outlineFilter];
   }
 
   get boardIndexesToCoords() {
-    return this.boardIndexes.multiplyScalar(cellSize);
+    return this.boardIndexes.multiplyScalar(this.board.cellSize);
   }
   select() {
     this.selected = true;
@@ -46,5 +45,17 @@ export class Gem extends PIXI.Sprite {
     }
 
     this.position = this.position.add(this.v.multiplyScalar(speed));
+  }
+  explode(app) {
+    const explosionTextures = Object.values(PIXI.Assets.get("explosion.json").textures);
+    const explosion = new PIXI.AnimatedSprite(explosionTextures);
+    explosion.position = this.position;
+    explosion.scale.set(
+      this.board.cellSize / explosion.width,
+      this.board.cellSize / explosion.height
+    );
+    explosion.onLoop = () => explosion.destroy();
+    app.stage.addChild(explosion);
+    explosion.play();
   }
 }

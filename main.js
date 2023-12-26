@@ -2,49 +2,64 @@ import * as PIXI from "pixi.js";
 import "@pixi/math-extras";
 import Board from "./board";
 
-//Create a Pixi Application
-export const cellSize = 128;
 export const app = new PIXI.Application({
-  background: "#1099bb",
-  width: cellSize * 5,
-  height: cellSize * 5,
+  background: "0xffffff",
+  resizeTo: window,
   antialias: true,
   resolution: 1,
 });
 document.body.appendChild(app.view);
 
-PIXI.Assets.load("gems.json").then(onAssetsLoaded);
+const gridSize = 6;
+const cellSize = Math.min(90, app.screen.width / gridSize);
+let speed = 8;
 let state, board;
+
+PIXI.Assets.load(["gems.json", "explosion.json"]).then(onAssetsLoaded);
+
 function onAssetsLoaded() {
-  board = new Board(5, 5);
+  board = new Board(gridSize, gridSize, cellSize);
   app.stage.addChild(board.container);
+
+  const stageMask = new PIXI.Graphics();
+  stageMask.beginFill(0xff3300);
+  stageMask.drawRect(
+    app.screen.width / 2 - board.width / 2,
+    app.screen.height / 2 - board.height / 2,
+    board.width,
+    board.height
+  );
+  stageMask.endFill();
+  app.stage.mask = stageMask;
+
+  app.stage.pivot = new PIXI.Point(app.stage.width / 2, app.stage.height / 2);
+  app.stage.position = new PIXI.Point(app.screen.width / 2, app.screen.height / 2);
   state = idleState;
-  app.ticker.add((delta) => gameLoop(delta));
+  app.ticker.add(gameLoop);
 }
 
 function gameLoop(delta) {
   state(delta);
 }
 
-let speed = 5;
 let count = 0;
 function idleState(delta) {
-  console.log("idleState");
   count += 0.03;
-  if (board.selectedGem) board.selectedGem.outlineFilter.thickness = Math.sin(count) * speed;
+  if (board.selectedGem)
+    board.selectedGem.outlineFilter.thickness =
+      (Math.abs(Math.sin((count * speed) / 10)) * cellSize) / 20;
   if (board.selectedGem && board.targetGem) state = moveState;
 }
 
 function moveState(delta) {
-  console.log("moveState");
   const selectedGem = board.selectedGem;
   const targetGem = board.targetGem;
   if (
     !selectedGem.position.equals(selectedGem.boardIndexesToCoords) ||
     !targetGem.position.equals(targetGem.boardIndexesToCoords)
   ) {
-    selectedGem.moveToNewPos(speed);
-    targetGem.moveToNewPos(speed);
+    selectedGem.moveToNewPos(speed * delta);
+    targetGem.moveToNewPos(speed * delta);
     return;
   } else if (board.swapped) state = comboState;
   else {
@@ -55,37 +70,40 @@ function moveState(delta) {
 }
 
 function comboState(delta) {
-  console.log("comboState");
   const gemsForDeletion = board.clear();
   if (gemsForDeletion.length > 0) {
-    gemsForDeletion.forEach((gem) => board.removeGem(gem));
+    gemsForDeletion.forEach((gem) => {
+      gem.explode(app);
+      board.removeGem(gem);
+    });
     board.selectedGem = null;
     board.targetGem = null;
     board.rearrange();
+    app.ticker.remove(gameLoop);
+    setTimeout(() => app.ticker.add(gameLoop), 600);
     state = rearrangeState;
     return;
-  } else {
+  } else if (board.selectedGem && board.targetGem) {
     board.swap(board.selectedGem, board.targetGem);
     state = moveState;
     return;
+  } else {
+    board.swapped = false;
+    state = idleState;
   }
-  // state = idleState;
-  // board.selectedGem = null;
-  // board.targetGem = null;
 }
 
 function rearrangeState(delta) {
-  console.log("rearrangeState");
   let gemsInPlace = true;
   board.gems.forEach((row) =>
     row.forEach((gem) => {
       if (gem === null) return null;
       if (!gem.position.equals(gem.boardIndexesToCoords)) {
         gemsInPlace = false;
-        gem.moveToNewPos(speed / 3);
+        gem.moveToNewPos(speed * delta);
         return gem;
       }
     })
   );
-  if (gemsInPlace) state = idleState;
+  if (gemsInPlace) state = comboState;
 }

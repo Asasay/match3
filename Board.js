@@ -1,42 +1,23 @@
+import { Container, Point, Sprite, Texture } from "pixi.js";
 import { Gem } from "./Gem";
-import { Container, Point } from "pixi.js";
-import {
-  principalDiagonal,
-  moveNullsToLeft,
-  secondaryDiagonal,
-  swapElements2D,
-  toWindows,
-  transpose,
-} from "./helpers";
-import { Text } from "pixi.js";
-import { cellSize } from "./main";
+import { moveNullsToLeft, swapElements2D, toWindows, transpose } from "./helpers";
 
 export default class Board {
-  constructor(rows, cols) {
+  constructor(rows, cols, cellSize) {
     this.gems = [];
     this.container = new Container();
+    this.width = cellSize * cols;
+    this.height = cellSize * rows;
     this.selectedGem = null;
     this.targetGem = null;
     this.swapped = false;
+    this.cellSize = cellSize;
+
     for (var y = 0; y < rows; y++) {
       this.gems.push([]);
       this.gems[y].push(new Array(rows));
       for (var x = 0; x < cols; x++) {
-        const gem = new Gem(new Point(x, y), this);
-        this.gems[y][x] = gem;
-        gem.scale.set(cellSize / gem.width, cellSize / gem.height);
-        gem.position.set(x * cellSize, y * cellSize);
-        this.container.addChild(gem);
-
-        gem.text = new Text(y + ", " + x);
-        gem.text.zIndex = 999;
-        gem.text.position = gem.position;
-        this.container.sortableChildren = true;
-        this.container.addChild(gem.text);
-
-        gem.eventMode = "static";
-        gem.cursor = "pointer";
-        gem.on("pointerdown", this.handleSelect(this));
+        const gem = this.addGem(new Point(x, y), new Point(x * this.cellSize, y * this.cellSize));
       }
     }
   }
@@ -60,9 +41,10 @@ export default class Board {
 
   clear() {
     const transposed = transpose(this.gems);
-    const pDiagonal = principalDiagonal(this.gems);
-    const sDiagonal = secondaryDiagonal(this.gems);
-    const combined = this.gems.concat(transposed).concat(pDiagonal).concat(sDiagonal);
+    // const pDiagonal = principalDiagonal(this.gems);
+    // const sDiagonal = secondaryDiagonal(this.gems);
+    const combined = this.gems.concat(transposed);
+    // .concat(pDiagonal).concat(sDiagonal);
     const duplicating = combined
       .map((row) =>
         toWindows(row, 3).filter((window) => new Set(window.map((gem) => gem.color)).size == 1)
@@ -80,14 +62,35 @@ export default class Board {
 
   rearrange() {
     this.gems = transpose(transpose(this.gems).map((row) => moveNullsToLeft(row)));
+    const nullCountInCol = Array(this.gems[0].length).fill(0);
     this.gems.forEach((row, y) =>
       row.forEach((gem, x) => {
-        if (gem === null) return;
+        if (gem === null) nullCountInCol[x]++;
         else gem.boardIndexes.set(x, y);
       })
     );
+    this.gems = this.gems.map((row, y) =>
+      row.map((gem, x) => {
+        if (gem === null) {
+          return this.addGem(
+            new Point(x, y),
+            new Point(x * this.cellSize, y * this.cellSize - this.cellSize * nullCountInCol[x])
+          );
+        } else return gem;
+      })
+    );
   }
-
+  addGem(boardIndexes, position) {
+    const newGem = new Gem(boardIndexes, this);
+    this.gems[boardIndexes.y][boardIndexes.x] = newGem;
+    newGem.position = position;
+    newGem.scale.set(this.cellSize / newGem.width, this.cellSize / newGem.height);
+    this.container.addChild(newGem);
+    newGem.eventMode = "static";
+    newGem.cursor = "pointer";
+    newGem.on("pointerdown", this.handleSelect(this));
+    return newGem;
+  }
   swap(gem1, gem2) {
     this.swapped = !this.swapped;
     const y1 = gem1.boardIndexes.y;
