@@ -18,7 +18,7 @@ let state, board;
 PIXI.Assets.load(["gems.json", "explosion.json"]).then(onAssetsLoaded);
 
 function onAssetsLoaded() {
-  board = new Board(gridSize, gridSize, cellSize);
+  board = new Board(gridSize, gridSize, cellSize, app);
   app.stage.addChild(board.container);
 
   const stageMask = new PIXI.Graphics();
@@ -42,12 +42,7 @@ function gameLoop(delta) {
   state(delta);
 }
 
-let count = 0;
 function idleState(delta) {
-  count += 0.03;
-  if (board.selectedGem)
-    board.selectedGem.outlineFilter.thickness =
-      (Math.abs(Math.sin((count * speed) / 10)) * cellSize) / 20;
   if (board.selectedGem && board.targetGem) state = moveState;
 }
 
@@ -73,7 +68,7 @@ function comboState(delta) {
   const gemsForDeletion = board.clear();
   if (gemsForDeletion.length > 0) {
     gemsForDeletion.forEach((gem) => {
-      gem.explode(app);
+      gem.explode();
       board.removeGem(gem);
     });
     board.selectedGem = null;

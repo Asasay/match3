@@ -3,7 +3,8 @@ import { Gem } from "./Gem";
 import { moveNullsToLeft, swapElements2D, toWindows, transpose } from "./helpers";
 
 export default class Board {
-  constructor(rows, cols, cellSize) {
+  constructor(rows, cols, cellSize, app) {
+    this.app = app;
     this.gems = [];
     this.container = new Container();
     this.width = cellSize * cols;
@@ -20,23 +21,6 @@ export default class Board {
         const gem = this.addGem(new Point(x, y), new Point(x * this.cellSize, y * this.cellSize));
       }
     }
-  }
-  handleSelect(board) {
-    return function () {
-      const targetGem = this;
-      if (board.selectedGem) {
-        board.selectedGem.deselect();
-        if (board.adjacent(board.selectedGem, targetGem)) {
-          board.targetGem = targetGem;
-          board.swap(board.selectedGem, board.targetGem);
-        } else {
-          board.selectedGem = null;
-        }
-      } else {
-        targetGem.select();
-        board.selectedGem = targetGem;
-      }
-    };
   }
 
   clear() {
@@ -81,14 +65,9 @@ export default class Board {
     );
   }
   addGem(boardIndexes, position) {
-    const newGem = new Gem(boardIndexes, this);
+    const newGem = new Gem(boardIndexes, this, this.cellSize, position);
     this.gems[boardIndexes.y][boardIndexes.x] = newGem;
-    newGem.position = position;
-    newGem.scale.set(this.cellSize / newGem.width, this.cellSize / newGem.height);
     this.container.addChild(newGem);
-    newGem.eventMode = "static";
-    newGem.cursor = "pointer";
-    newGem.on("pointerdown", this.handleSelect(this));
     return newGem;
   }
   swap(gem1, gem2) {
