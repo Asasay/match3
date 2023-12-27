@@ -1,10 +1,19 @@
 import * as PIXI from "pixi.js";
 import { getRandomProp } from "./helpers";
 import { OutlineFilter } from "@pixi/filter-outline";
+import Board from "./Board";
 
 export class Gem extends PIXI.Sprite {
-  constructor(boardIndexes, board, size, position) {
-    const gemsTextures = PIXI.Assets.get("gems.json").textures;
+  boardIndexes: PIXI.Point;
+  board: Board;
+  size: number;
+  color: string;
+  v: PIXI.Point;
+  selected: boolean;
+  outlineFilter: OutlineFilter;
+  counter: number;
+  constructor(boardIndexes: PIXI.Point, board: Board, size: number, position: PIXI.Point) {
+    const gemsTextures: PIXI.Texture[] = PIXI.Assets.get("gems.json").textures;
     const texture = getRandomProp(gemsTextures);
     super(texture);
 
@@ -20,7 +29,7 @@ export class Gem extends PIXI.Sprite {
     this.v = new PIXI.Point(0, 0);
     this.selected = false;
 
-    this.outlineFilter = new OutlineFilter(this.size / 20, "#DE6F3E", 1, 0.8);
+    this.outlineFilter = new OutlineFilter(this.size / 20, 0xde6f3e, 1, 0.8);
     this.outlineFilter.enabled = false;
     this.filters = [this.outlineFilter];
     this.counter = 0;
@@ -45,7 +54,7 @@ export class Gem extends PIXI.Sprite {
       this.board.selectedGem = targetGem;
     }
   }
-  #selectAnimation(delta) {
+  #selectAnimation(delta: number) {
     this.counter += 0.03;
     this.outlineFilter.thickness = (Math.abs(Math.sin(this.counter)) * this.size) / 20;
   }
@@ -61,7 +70,7 @@ export class Gem extends PIXI.Sprite {
     this.board.app.ticker.remove(this.#selectAnimation, this);
     this.outlineFilter.enabled = false;
   }
-  moveToNewPos(speed) {
+  moveToNewPos(speed: number) {
     const newPos = this.boardIndexesToCoords;
     const delta = newPos.subtract(this.position);
     const distance = delta.magnitude();
@@ -78,7 +87,9 @@ export class Gem extends PIXI.Sprite {
     return this.boardIndexes.multiplyScalar(this.size);
   }
   explode() {
-    const explosionTextures = Object.values(PIXI.Assets.get("explosion.json").textures);
+    const explosionTextures: PIXI.Texture[] = Object.values(
+      PIXI.Assets.get("explosion.json").textures
+    );
     const explosion = new PIXI.AnimatedSprite(explosionTextures);
     explosion.position = this.position;
     explosion.scale.set(this.size / explosion.width, this.size / explosion.height);

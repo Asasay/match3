@@ -1,24 +1,28 @@
-import { Container, Point, Sprite, Texture } from "pixi.js";
+import { Container, Point, Application, ICanvas, DisplayObject } from "pixi.js";
 import { Gem } from "./Gem";
-import { moveNullsToLeft, swapElements2D, toWindows, transpose } from "./helpers";
+import { moveNullsToLeft, notEmpty, swapElements2D, toWindows, transpose } from "./helpers";
 
 export default class Board {
-  constructor(rows, cols, cellSize, app) {
+  app: Application<ICanvas>;
+  gems: Array<Gem | null>[] = [];
+  container: Container<DisplayObject> = new Container();
+  width: number;
+  height: number;
+  selectedGem: Gem | null = null;
+  targetGem: Gem | null = null;
+  swapped: boolean = false;
+  cellSize: number;
+
+  constructor(rows: number, cols: number, cellSize: number, app: Application<ICanvas>) {
     this.app = app;
-    this.gems = [];
-    this.container = new Container();
     this.width = cellSize * cols;
     this.height = cellSize * rows;
-    this.selectedGem = null;
-    this.targetGem = null;
-    this.swapped = false;
     this.cellSize = cellSize;
 
     for (var y = 0; y < rows; y++) {
       this.gems.push([]);
-      this.gems[y].push(new Array(rows));
       for (var x = 0; x < cols; x++) {
-        const gem = this.addGem(new Point(x, y), new Point(x * this.cellSize, y * this.cellSize));
+        this.addGem(new Point(x, y), new Point(x * this.cellSize, y * this.cellSize));
       }
     }
   }
@@ -31,19 +35,22 @@ export default class Board {
     // .concat(pDiagonal).concat(sDiagonal);
     const duplicating = combined
       .map((row) =>
-        toWindows(row, 3).filter((window) => new Set(window.map((gem) => gem.color)).size == 1)
+        toWindows(row, 3).filter(
+          (window) => new Set(window.map((gem) => gem && gem.color)).size == 1
+        )
       )
-      .flat(Infinity);
+      .flat(20)
+      .filter(notEmpty);
     return [...new Set(duplicating)];
   }
-  removeGem(gem) {
+
+  removeGem(gem: Gem) {
     this.gems[gem.boardIndexes.y][gem.boardIndexes.x] = null;
     this.container.removeChild(gem);
   }
-  adjacent(gem1, gem2) {
+  adjacent(gem1: Gem, gem2: Gem) {
     return gem1.boardIndexes.subtract(gem2.boardIndexes).magnitude() == 1;
   }
-
   rearrange() {
     this.gems = transpose(transpose(this.gems).map((row) => moveNullsToLeft(row)));
     const nullCountInCol = Array(this.gems[0].length).fill(0);
@@ -64,13 +71,13 @@ export default class Board {
       })
     );
   }
-  addGem(boardIndexes, position) {
+  addGem(boardIndexes: Point, position: Point) {
     const newGem = new Gem(boardIndexes, this, this.cellSize, position);
     this.gems[boardIndexes.y][boardIndexes.x] = newGem;
     this.container.addChild(newGem);
     return newGem;
   }
-  swap(gem1, gem2) {
+  swap(gem1: Gem, gem2: Gem) {
     this.swapped = !this.swapped;
     const y1 = gem1.boardIndexes.y;
     const x1 = gem1.boardIndexes.x;

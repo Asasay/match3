@@ -32,7 +32,7 @@ test("secondaryDiagonal", () => {
 });
 
 test("swap", () => {
-  const prev = JSON.parse(JSON.stringify(array));
+  const prev: number[][] = JSON.parse(JSON.stringify(array));
   expect(swapElements2D(array, 0, 2, 1, 0)).toStrictEqual([
     [1, 2, 4],
     [3, 5, 6],
@@ -46,13 +46,15 @@ test("find index", () => {
 });
 
 test("window function", () => {
-  expect(toWindows(array, 3)).toStrictEqual([
-    [
-      [1, 2, 3],
-      [4, 5, 6],
-      [7, 8, 9],
-    ],
+  expect(toWindows([1, 2, 3, 4, 5], 3)).toStrictEqual([
+    [1, 2, 3],
+    [2, 3, 4],
+    [3, 4, 5],
   ]);
+  expect(toWindows([1, 2, 3], 3)).toStrictEqual([[1, 2, 3]]);
+  expect(toWindows([1, 2, 3], 5)).toStrictEqual([[1, 2, 3]]);
+  expect(toWindows([1, 2, 3, 4, 5], 1)).toStrictEqual([[1], [2], [3], [4], [5]]);
+  expect(toWindows([], 1)).toStrictEqual([[]]);
 });
 
 test("move nulls to the left function", () => {

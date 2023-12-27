@@ -2,7 +2,7 @@ import * as PIXI from "pixi.js";
 import "@pixi/math-extras";
 import Board from "./Board";
 
-export const app = new PIXI.Application({
+export const app = new PIXI.Application<HTMLCanvasElement>({
   background: "0xffffff",
   resizeTo: window,
   antialias: true,
@@ -13,7 +13,7 @@ document.body.appendChild(app.view);
 const gridSize = 6;
 const cellSize = Math.min(90, app.screen.width / gridSize);
 let speed = 8;
-let state, board;
+let state: (delta: number) => void, board: Board;
 
 PIXI.Assets.load(["gems.json", "explosion.json"]).then(onAssetsLoaded);
 
@@ -38,23 +38,23 @@ function onAssetsLoaded() {
   app.ticker.add(gameLoop);
 }
 
-function gameLoop(delta) {
+function gameLoop(delta: number) {
   state(delta);
 }
 
-function idleState(delta) {
+function idleState(delta: number) {
   if (board.selectedGem && board.targetGem) state = moveState;
 }
 
-function moveState(delta) {
+function moveState(delta: number) {
   const selectedGem = board.selectedGem;
   const targetGem = board.targetGem;
   if (
-    !selectedGem.position.equals(selectedGem.boardIndexesToCoords) ||
-    !targetGem.position.equals(targetGem.boardIndexesToCoords)
+    !selectedGem?.position.equals(selectedGem.boardIndexesToCoords) ||
+    !targetGem?.position.equals(targetGem.boardIndexesToCoords)
   ) {
-    selectedGem.moveToNewPos(speed * delta);
-    targetGem.moveToNewPos(speed * delta);
+    selectedGem?.moveToNewPos(speed * delta);
+    targetGem?.moveToNewPos(speed * delta);
     return;
   } else if (board.swapped) state = comboState;
   else {
@@ -64,7 +64,7 @@ function moveState(delta) {
   }
 }
 
-function comboState(delta) {
+function comboState(delta: number) {
   const gemsForDeletion = board.clear();
   if (gemsForDeletion.length > 0) {
     gemsForDeletion.forEach((gem) => {
@@ -88,7 +88,7 @@ function comboState(delta) {
   }
 }
 
-function rearrangeState(delta) {
+function rearrangeState(delta: number) {
   let gemsInPlace = true;
   board.gems.forEach((row) =>
     row.forEach((gem) => {
