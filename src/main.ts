@@ -41,7 +41,7 @@ function onAssetsLoaded() {
 function gameLoop(delta: number) {
   state(delta);
 }
-
+// @ts-ignore
 function idleState(delta: number) {
   if (board.selectedGem && board.targetGem) state = moveState;
 }
@@ -63,7 +63,7 @@ function moveState(delta: number) {
     board.targetGem = null;
   }
 }
-
+// @ts-ignore
 function comboState(delta: number) {
   const gemsForDeletion = board.clear();
   if (gemsForDeletion.length > 0) {

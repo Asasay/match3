@@ -54,6 +54,7 @@ export class Gem extends PIXI.Sprite {
       this.board.selectedGem = targetGem;
     }
   }
+  // @ts-ignore
   #selectAnimation(delta: number) {
     this.counter += 0.03;
     this.outlineFilter.thickness = (Math.abs(Math.sin(this.counter)) * this.size) / 20;
