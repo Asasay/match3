@@ -11,6 +11,7 @@ export default class Board {
   selectedGem: Gem | null = null;
   targetGem: Gem | null = null;
   swapped: boolean = false;
+  interactive: boolean = true;
   cellSize: number;
 
   constructor(rows: number, cols: number, cellSize: number, app: Application<ICanvas>) {

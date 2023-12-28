@@ -12,7 +12,7 @@ document.body.appendChild(app.view);
 
 const gridSize = 6;
 const cellSize = Math.min(90, app.screen.width / gridSize);
-let speed = 8;
+let speed = 9;
 let state: (delta: number) => void, board: Board;
 
 PIXI.Assets.load(["gems.json", "explosion.json"]).then(onAssetsLoaded);
@@ -43,7 +43,10 @@ function gameLoop(delta: number) {
 }
 // @ts-ignore
 function idleState(delta: number) {
-  if (board.selectedGem && board.targetGem) state = moveState;
+  if (board.selectedGem && board.targetGem) {
+    board.interactive = false;
+    state = moveState;
+  }
 }
 
 function moveState(delta: number) {
@@ -59,6 +62,7 @@ function moveState(delta: number) {
   } else if (board.swapped) state = comboState;
   else {
     state = idleState;
+    board.interactive = true;
     board.selectedGem = null;
     board.targetGem = null;
   }
@@ -67,12 +71,12 @@ function moveState(delta: number) {
 function comboState(delta: number) {
   const gemsForDeletion = board.clear();
   if (gemsForDeletion.length > 0) {
+    board.selectedGem = null;
+    board.targetGem = null;
     gemsForDeletion.forEach((gem) => {
       gem.explode();
       board.removeGem(gem);
     });
-    board.selectedGem = null;
-    board.targetGem = null;
     board.rearrange();
     app.ticker.remove(gameLoop);
     setTimeout(() => app.ticker.add(gameLoop), 600);
@@ -83,6 +87,7 @@ function comboState(delta: number) {
     state = moveState;
     return;
   } else {
+    board.interactive = true;
     board.swapped = false;
     state = idleState;
   }

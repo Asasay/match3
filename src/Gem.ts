@@ -36,24 +36,9 @@ export class Gem extends PIXI.Sprite {
 
     this.eventMode = "static";
     this.cursor = "pointer";
-    this.on("pointerdown", this.#handleSelect, this);
+    this.on("pointerdown", this.select, this);
   }
 
-  #handleSelect() {
-    const targetGem = this;
-    if (this.board.selectedGem) {
-      this.board.selectedGem.deselect();
-      if (this.board.adjacent(this.board.selectedGem, targetGem)) {
-        this.board.targetGem = targetGem;
-        this.board.swap(this.board.selectedGem, this.board.targetGem);
-      } else {
-        this.board.selectedGem = null;
-      }
-    } else {
-      targetGem.select();
-      this.board.selectedGem = targetGem;
-    }
-  }
   // @ts-ignore
   #selectAnimation(delta: number) {
     this.counter += 0.03;
@@ -61,13 +46,22 @@ export class Gem extends PIXI.Sprite {
   }
 
   select() {
-    this.selected = true;
-    this.counter = 0;
-    this.board.app.ticker.add(this.#selectAnimation, this);
-    this.outlineFilter.enabled = true;
+    if (!this.board.interactive) return;
+    if (!this.board.selectedGem && !this.board.targetGem) {
+      this.board.selectedGem = this;
+      this.counter = 0;
+      this.board.app.ticker.add(this.#selectAnimation, this);
+      this.outlineFilter.enabled = true;
+    } else if (this.board.selectedGem && !this.board.targetGem) {
+      this.board.selectedGem?.deselect();
+      this.board.targetGem = this;
+      if (this.board.adjacent(this.board.selectedGem, this.board.targetGem)) {
+        this.board.swap(this.board.selectedGem, this.board.targetGem);
+      }
+    }
   }
+
   deselect() {
-    this.selected = false;
     this.board.app.ticker.remove(this.#selectAnimation, this);
     this.outlineFilter.enabled = false;
   }
