@@ -81,6 +81,9 @@ export class Gem extends PIXI.Sprite {
   get boardIndexesToCoords() {
     return this.boardIndexes.multiplyScalar(this.size);
   }
+  inPlace() {
+    return this.position.equals(this.boardIndexesToCoords);
+  }
   explode() {
     const explosionTextures: PIXI.Texture[] = Object.values(
       PIXI.Assets.get("explosion.json").textures
